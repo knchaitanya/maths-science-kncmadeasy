@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maths and Science Simplified through KNCMadeeasy</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mui/material@5.2.0/dist/material-ui.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/exporters/GLTFExporter.js"></script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .section {
+      width: 90%;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .section-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    #graph-container, #ar-container, #science-ar-container {
+      width: 100%;
+      height: 400px;
+      margin: 20px auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    #equation-input, #plot-button, #export-to-ar {
+      margin-top: 10px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 16px;
+    }
+    footer {
+      margin-top: auto;
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h1 class="section-title">Welcome to Maths Simplified - Specially made for SLBVP Teachers exhibit</h1>
+    <p>Explore interactive 3D graphs and augmented reality visualizations for mathematical equations.</p>
+    <input id="equation-input" type="text" placeholder="Enter equation (e.g., z = x^2 + y^2)" />
+    <button id="plot-button">Plot Graph</button>
+    <button id="export-to-ar">Export to AR</button>
+    <div id="graph-container"></div>
+    <div id="ar-container"></div>
+  </div>
+
+  <div class="section">
+    <h1 class="section-title">Science Simplified</h1>
+    <p>Discover interactive 3D models and AR visualizations for scientific concepts.</p>
+    <div id="science-ar-container">
+      <model-viewer src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
+        ar 
+        ar-modes="scene-viewer webxr quick-look" 
+        camera-controls 
+        auto-rotate 
+        style="width: 100%; height: 400px;">
+      </model-viewer>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Maths and Science Simplified. All rights reserved by knchaitanya | whatsapp to 9611090001 for further details.
+  </footer>
+
+  <script>
+    let scene, camera, renderer, graphMesh;
+
+    function init3DGraph() {
+      const container = document.getElementById("graph-container");
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
+
+      camera.position.set(0, 15, 25);
+      camera.lookAt(0, 0, 0);
+
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(10, 10, 10).normalize();
+      scene.add(light);
+
+      window.addEventListener("resize", () => {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      });
+    }
+
+    function generateGraph() {
+      const equation = document.getElementById("equation-input").value;
+      if (!equation) {
+        alert("Please enter an equation!");
+        return;
+      }
+
+      if (graphMesh) scene.remove(graphMesh);
+
+      const geometry = new THREE.PlaneGeometry(10, 10, 100, 100);
+      const material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x0077ff });
+      const vertices = geometry.attributes.position.array;
+
+      const func = math.parse(equation.replace("z =", "")).compile();
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i + 1];
+        const z = func.evaluate({ x, y });
+        vertices[i + 2] = z || 0;
+      }
+
+      geometry.attributes.position.needsUpdate = true;
+      graphMesh = new THREE.Mesh(geometry, material);
+      scene.add(graphMesh);
+
+      camera.position.set(0, 15, 25);
+      camera.lookAt(0, 0, 0);
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    function exportToAR() {
+      if (!graphMesh) {
+        alert("No graph to export!");
+        return;
+      }
+
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(scene, (result) => {
+        const blob = new Blob([JSON.stringify(result)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        // Pass the model to model-viewer
+        const arContainer = document.getElementById("ar-container");
+        arContainer.innerHTML = `
+          <model-viewer src="${url}" ar ar-modes="scene-viewer webxr quick-look" 
+            camera-controls auto-rotate style="width: 100%; height: 400px;">
+          </model-viewer>
+        `;
+      });
+    }
+
+    document.getElementById("plot-button").addEventListener("click", generateGraph);
+    document.getElementById("export-to-ar").addEventListener("click", exportToAR);
+
+    init3DGraph();
+  </script>
+</body>
+</html>
