@@ -68,8 +68,26 @@
     function loadModel(modelUrl) {
       const modelViewer = document.getElementById('ar-model-viewer');
       modelViewer.setAttribute('src', modelUrl);
+
+      // Pause animations initially
+      modelViewer.pause();
       console.log(`Model loaded: ${modelUrl}`);
     }
+
+    // Add AR session event listener
+    document.getElementById('ar-model-viewer').addEventListener('ar-status', (event) => {
+      const modelViewer = event.target;
+
+      if (modelViewer.arStatus === 'session-started') {
+        // Start animations when AR session starts
+        modelViewer.play();
+        console.log('AR session started: Animations playing');
+      } else if (modelViewer.arStatus === 'not-presenting') {
+        // Pause animations when AR session ends
+        modelViewer.pause();
+        console.log('AR session ended: Animations paused');
+      }
+    });
   </script>
 </body>
 </html>
